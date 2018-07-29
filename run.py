@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 from gevent import monkey
+
 monkey.patch_all()
 
 import multiprocessing
@@ -8,8 +9,15 @@ import spider
 import availability
 import persistence
 import web
+import argparse, sys
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', dest='url')
+    result = parser.parse_args(sys.argv[1:])
+    config.PERSISTENCE["url"] = result.url
+
     # 进程间队列
     # 爬取的代理
     queue_verification = multiprocessing.Queue(config.COROUTINE_NUM)
@@ -21,7 +29,8 @@ if __name__ == '__main__':
     # 爬虫
     workers.append(multiprocessing.Process(target=spider.worker, args=(queue_verification,)))
     # 爬取下来的代理验证
-    workers.append(multiprocessing.Process(target=availability.crawl_worker, args=(queue_verification, queue_persistence)))
+    workers.append(
+        multiprocessing.Process(target=availability.crawl_worker, args=(queue_verification, queue_persistence)))
     # 已持久化的代理验证
     workers.append(multiprocessing.Process(target=availability.store_worker))
     # 持久化
